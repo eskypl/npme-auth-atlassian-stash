@@ -1,0 +1,30 @@
+{
+  "name": "npme-auth-stash",
+  "version": "1.0.0",
+  "description": "npmE Authorizer and Authenticator for Stash",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha test/spec"
+  },
+  "keywords": [
+    "npme",
+    "auth",
+    "stash"
+  ],
+  "author": "Krzysztof Winiarski",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "chai-http": "^1.0.0",
+    "mocha": "^2.2.5",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
+  },
+  "dependencies": {
+    "lodash": "^3.9.1",
+    "request": "^2.55.0"
+  }
+}
