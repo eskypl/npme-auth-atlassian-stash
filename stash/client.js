@@ -1,5 +1,8 @@
+var _ = require('lodash');
 var url = require('url');
 var StashUser = require('./user');
+var Promise = require('bluebird');
+var request = require('request');
 
 var API_BASE_PATH = '/rest/api/1.0/';
 var API_ROUTES = {
@@ -11,8 +14,20 @@ var API_ROUTES = {
     GROUP_REPOSITORY_PERMISSIONS: 'projects/{projectKey}/repos/{repositorySlug}/permissions/groups'
 };
 
-function StashClient(_host) {
+function StashClient(_host, _user, _pass) {
+    var self = this;
+
     this.baseUrl = url.resolve(_host, API_BASE_PATH);
+    this.auth = {
+        user: _user,
+        pass: _pass
+    };
+
+    this.commonRequestOptions = {
+        json: true,
+        strictSSL: false,
+        auth: self.auth
+    };
 }
 
 function setParams(_route, _params) {
@@ -39,14 +54,35 @@ StashClient.prototype.url = function (_route, _params) {
 };
 
 StashClient.prototype.user = function (_name, _password) {
-    if (!this.user.instance) {
-        Object.defineProperty(this.user, 'instance', {
-            enumerable: false,
-            configurable: false,
-            value: new StashUser(this, _name, _password)
+    return new StashUser(this, _name, _password);
+};
+
+StashClient.prototype.authorize = function (_userName, _userPassword) {
+    var apiUrl = this.url('USER', { userSlug: _userName });
+    var requestOptions = _.extend({}, this.commonRequestOptions, {
+        auth: {
+            user: _userName,
+            pass: _userPassword
+        }
+    });
+
+    return new Promise(function (_resolve, _reject) {
+        request.get(apiUrl, requestOptions, function (_error, _response, _responseBody) {
+            if (_error) {
+                return _reject(_error);
+            }
+
+            if (_response.statusCode !== 200) {
+                return _reject(new Error('Request Error: ' + _response.statusCode + ' ' + apiUrl));
+            }
+
+            if (_responseBody.active === false) {
+                return _reject(new Error('User "' + _userName + '" is not active'));
+            }
+
+            _resolve(_responseBody);
         });
-    }
-    return this.user.instance;
+    });
 };
 
 module.exports = StashClient;

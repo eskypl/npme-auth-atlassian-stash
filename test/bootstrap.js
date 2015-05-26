@@ -8,3 +8,7 @@ chai.config.includeStack = true;
 global.expect = chai.expect;
 global.assert = chai.assert;
 global.request = chai.request;
+
+process.env.stash_host = 'http://localhost:3000'
+process.env.stash_user = 'npme'
+process.env.stash_pass = 'password'

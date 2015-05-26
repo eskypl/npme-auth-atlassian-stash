@@ -26,6 +26,13 @@ fixtures.forEach(function (_fixture) {
 
     if (_fixture.fileUrl === 'admin/users/more-members') {
         fixturesMap['/rest/api/1.0/' + _fixture.fileUrl + '?context=cconrad'] = _fixture.data;
+        fixturesMap['/rest/api/1.0/' + _fixture.fileUrl + '?context=mmorin'] = {
+            size: 3,
+            limit: 25,
+            isLastPage: true,
+            values: [],
+            start: 0
+        };
     }
 });
 

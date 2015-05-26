@@ -1,59 +1,59 @@
 var _ = require('lodash');
-var url = require('url');
+var repository = require('./repository');
 var request = require('request');
 var crypto = require('crypto');
-
-/**
- * @see https://github.com/bcoe/npme-auth-foo
- * @param _userData
- * @returns {{token: string, user: {email: *, name: *}}}
- */
-function authenticatorData(_userData) {
-    return {
-        token: _userData.id,
-        user: {
-            email: _userData.emailAddress,
-            name: _userData.name
-        }
-    };
-}
+var Promise = require('bluebird');
 
 function User(_stashClient, _userName, _userPassword) {
-    var self = this;
-
     this.auth = {
         user: _userName,
         pass: _userPassword
     };
 
-    this.commonRequestOptions = {
-        json: true,
-        strictSSL: false,
-        auth: self.auth
-    };
+    this.client = _stashClient;
+    this.requestOptions = _stashClient.commonRequestOptions;
 
     this.stashData;
     this.stashGroups;
-    this.client = _stashClient;
 }
 
 
+
 /**
- * Authorize Stash user and save its credentials
+ * Authorize Stash user
  * @returns {Promise}
  */
 User.prototype.authorize = function () {
+    // This will authorize user with its own credentials during Basic authentication.
+    // When done, user data is stored in redis cache.
+    return this.client.authorize(this.auth.user, this.auth.pass).then(function (_stashData) {
+        return {
+            token: token(_stashData),
+            user: {
+                name: _stashData.name,
+                email: _stashData.emailAddress
+            }
+        };
+    });
+
+};
+
+/**
+ * Check user account in Stash
+ * @returns {Promise}
+ */
+User.prototype.account = function () {
 
     var self = this;
     var apiUrl = this.client.url('USER', { userSlug: this.auth.user });
 
     return new Promise(function (_resolve, _reject) {
 
-        if (self.authenticatorData) {
-            return _resolve(self.authenticatorData);
+        if (self.stashData) {
+            return _resolve(self.stashData);
         }
 
-        request.get(apiUrl, self.commonRequestOptions, function (_error, _response, _responseBody) {
+        request.get(apiUrl, self.requestOptions, function (_error, _response, _responseBody) {
             self.stashData = _responseBody;
 
             if (_error) {
@@ -65,7 +65,7 @@ User.prototype.authorize = function () {
             }
 
             if (self.stashData.active === false) {
-                return _reject(new Error('User not active'));
+                return _reject(new Error('User "' + self.auth.user + '" is not active'));
             }
 
             _resolve(self.stashData);
@@ -84,7 +84,7 @@ User.prototype.groups = function () {
             return _resolve(self.stashGroups);
         }
 
-        request.get(apiUrl, self.commonRequestOptions, function (_error, _response, _responseBody) {
+        request.get(apiUrl, self.requestOptions, function (_error, _response, _responseBody) {
             if (_error) {
                 return _reject(_error);
             }
@@ -105,34 +105,7 @@ User.prototype.groups = function () {
     });
 };
 
-function getProjectData(_repositoryUrl) {
-    var project = _repositoryUrl.match(/\/projects\/(\w+)/i);
-    if (project !== null) {
-        return {
-            path: project[0],
-            name: project[1]
-        };
-    }
-}
 
-function getRepositoryData(_repositoryUrl) {
-    var repo = _repositoryUrl.match(/\/repos\/(\w+)/i);
-    if (repo !== null) {
-        return {
-            path: repo[0],
-            name: repo[1]
-        };
-    }
-}
-
-function parseRepositoryUrl(_repositoryUrl) {
-    var repositoryUrl = url.parse(_repositoryUrl);
-
-    repositoryUrl.project = getProjectData(repositoryUrl.pathname);
-    repositoryUrl.repository = getRepositoryData(repositoryUrl.pathname);
-
-    return repositoryUrl;
-}
 
 /**
  * Get user or group permission (_permissionType) to the selected repository
@@ -143,22 +116,22 @@ function parseRepositoryUrl(_repositoryUrl) {
  * @param [_onlyProject] {Boolean}
  * @returns {*}
  */
-var permission =  function (_ctx, _repository, _permissionType, _onlyProject) {
+var permission = function (_ctx, _repository, _permissionType, _onlyProject) {
     var self = _ctx;
     var onlyProject = _onlyProject === true ? true : false;
-    var repository = parseRepositoryUrl(_repository);
+    var repo = repository.parseUrl(_repository);
     var routeKey = [_permissionType, (onlyProject ? 'project' : 'repository'), 'permissions'].join('_').toUpperCase();
-    var apiUrl = self.client.url(routeKey, { projectKey: repository.project.name, repositorySlug: repository.repository.name });
+    var apiUrl = self.client.url(routeKey, { projectKey: repo.project.name, repositorySlug: repo.repository.name });
     var pluckPath = (_permissionType === 'user') ? ['user.name', 'permission'] : ['group.name', 'permission'];
 
 
-    return Promise.all([self.authorize(), self.groups()]).then(function (_data) {
+    return Promise.all([self.account(), self.groups()]).then(function (_data) {
 
         var user = _data[0];
         var groups = _data[1];
 
         return new Promise(function (_resolve, _reject) {
-            request.get(apiUrl, self.commonRequestOptions, function (_error, _response, _responseBody) {
+            request.get(apiUrl, self.requestOptions, function (_error, _response, _responseBody) {
                 if (_error) {
                     return _reject(_error);
                 }
@@ -248,25 +221,12 @@ User.prototype.permission = function (_repository, _permissionType) {
     });
 };
 
-User.prototype.token = function () {
+function token(_stashData) {
     var token = crypto.createHash('sha256');
-    var stashData = _.pick(this.stashData, ['name', 'emailAddress', 'id']);
+    var stashData = _.pick(_stashData, ['name', 'emailAddress', 'id']);
 
     token.update(JSON.stringify(stashData));
     return token.digest('hex');
-};
-
-/**
- * @see https://github.com/bcoe/npme-auth-foo#the-callback
- */
-User.prototype.authenticatorData = function () {
-    return {
-        token: this.token(),
-        user: {
-            name: this.stashData.name,
-            email: this.stashData.emailAddress
-        }
-    };
 };
 
 
