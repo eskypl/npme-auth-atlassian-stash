@@ -1,10 +1,10 @@
 {
-  "name": "npme-auth-stash",
+  "name": "npme-auth-atlassian-stash",
   "version": "0.1.0",
-  "description": "npmE Authorizer and Authenticator for Stash",
+  "description": "Atlassian Stash authentication and authorization strategy for npm Enterprise.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eskypl/npme-auth-stash.git"
+    "url": "https://github.com/eskypl/npme-auth-atlassian-stash.git"
   },
   "main": "index.js",
   "directories": {

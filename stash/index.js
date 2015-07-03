@@ -3,7 +3,7 @@ var rc = require('rc');
 var winston = require('winston');
 var StashClient = require('./client');
 var config = rc('stash', {
-    logFile: '/etc/npme/logs/npme-auth-stash.log',
+    logFile: '/etc/npme/logs/npme-auth-atlassian-stash.log',
     logLevel: 'warn',
     host: null,
     user: null,

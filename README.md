@@ -1,10 +1,10 @@
 # npme-auth-stash
 
-Stash authentication and authorization strategy for npm Enterprise.
+Atlassian Stash authentication and authorization strategy for npm Enterprise.
 
 ## Installation
 
-You should install `npme-auth-stash` inside `node_modules` directory of npmE. Probably this will
+You should install `npme-auth-atlassian-stash` inside `node_modules` directory of npmE. Probably this will
 be `/etc/npme/node_modules`.
 
 ## Configuration
@@ -15,7 +15,7 @@ This module will use `.stashrc` file which yous should create in the main direct
 host=https://stash.domain.com
 user=npme
 pass=npmepass
-logFile=/etc/npme/logs/npme-auth-stash.log
+logFile=/etc/npme/logs/npme-auth-atlassian-stash.log
 logLevel=error
 ```
 
