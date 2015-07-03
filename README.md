@@ -36,12 +36,13 @@ logLevel=error
 `npme-auth-atlassian-stash` will use Stash account to get information
 about users, groups, projects and repositories. This account should
 be created only for the purpose of `npme-auth-atlassian-stash` and
-should have administrative privilages to be able to acquire needed
+should have administrative privileges to be able to acquire needed
 information.
 
 ### License
 
 Copyright (c) 2015 eSKY.pl S.A. (http://it.esky.pl)
+
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
