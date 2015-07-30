@@ -7,9 +7,6 @@
     "url": "https://github.com/eskypl/npme-auth-atlassian-stash.git"
   },
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "test": "node node_modules/mocha/bin/mocha test/spec"
   },
