@@ -1,6 +1,6 @@
 {
   "name": "npme-auth-atlassian-stash",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Atlassian Stash authentication and authorization strategy for npm Enterprise.",
   "repository": {
     "type": "git",
