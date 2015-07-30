@@ -5,6 +5,33 @@ var stash = require('./stash');
 var Session = require('./session');
 
 /**
+ * Fetches information about repository URL form package.json returned
+ * from CouchDB or send by client (untrusted package.json).
+ * @param _package
+ * @returns {string}
+ */
+function getRepositoryUrl(_package) {
+    if (_package.repository && _package.repository.url) {
+        return _package.repository.url;
+    }
+    else if (_package.versions && _package['dist-tags']) {
+        var latest = _package['dist-tags'].latest;
+        if (!latest) {
+            throw new Error('Cannot find repository URL in package.json');
+        }
+        var pkg = _package.versions[latest];
+        if (pkg) {
+            return getRepositoryUrl(pkg);
+        }
+        else {
+            throw new Error('Cannot find repository URL in package.json@' + latest);
+        }
+    } else {
+        throw new Error('Cannot find repository URL in package.json: Unknown package.json schema');
+    }
+}
+
+/**
  * @see https://github.com/bcoe/npme-auth-foo#writing-an-authorizer
  * @param _config
  * @constructor
@@ -56,18 +83,22 @@ Authorizer.prototype.authorize = function (_request, _cb) {
             ? _package // package.json from front-door
             : self.untrustedPackageJson; // untrusted package.json from request
     }).then(function (_package) {
-        var repository = _package.repository.url;
+        logger.debug('using package.json:', _package);
+        var repositoryUrl = getRepositoryUrl(_package);
 
         return self.whoami(self.token).then(function (_whoami) {
             logger.info('identified as user', _whoami.name);
             return self.client.user(_whoami.name)
         }).then(function (_stashUser) {
-            logger.info('getting permission for user', _stashUser.auth.user, 'on repository', repository, 'for', self.scope);
-            return _stashUser.permission(repository, self.scope);
+            logger.info('getting permission for user', _stashUser.auth.user, 'on repository', repositoryUrl, 'for', self.scope);
+            return _stashUser.permission(repositoryUrl, self.scope);
         }).then(function (_permission) {
-            logger.info('permissions for repository', repository, 'for', self.scope, ':', _permission);
+            logger.info('permissions for repository', repositoryUrl, 'for', self.scope, ':', _permission);
             _cb(null, _permission);
-        }).catch(_cb);
+        }).catch(function (_error) {
+            logger.error(_error);
+            _cb(_error);
+        });
 
     }).catch(_cb);
 };
@@ -80,14 +111,22 @@ Authorizer.prototype.authorize = function (_request, _cb) {
 Authorizer.prototype.loadPackageJson = function (_packagePath) {
     var self = this;
     var url = this.frontDoorHost + _packagePath.split('?')[0] + '?sharedFetchSecret=' + this.sharedFetchSecret;
+    var logger = this.logger;
 
     return new Promise(function (_resolve, _reject) {
         self.logger.info('fetching package.json', url);
         request.get(url, {
-            json: true
+            json: true,
+            strictSSL: false
         }, function(_error, _response, _package) {
             if (_error) {
-                _reject(_error);
+                logger.error(_error);
+                _resolve();
+            }
+            // we don't have an error but 4xx or something else from CouchDB
+            if (_response.statusCode !== 200) {
+                logger.debug(_response.statusCode, _response.statusMessage, _response.body);
+                _resolve();
             }
             else {
                 _resolve(_package);

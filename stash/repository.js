@@ -1,7 +1,7 @@
 var url = require('url');
 
 function getProjectData(_repositoryUrl) {
-    var project = _repositoryUrl.match(/\/projects\/(\w+)/i);
+    var project = _repositoryUrl.match(/\/projects\/([a-z0-9_\-]+)/i);
     if (project !== null) {
         return {
             path: project[0],
@@ -11,7 +11,7 @@ function getProjectData(_repositoryUrl) {
 }
 
 function getRepositoryData(_repositoryUrl) {
-    var repo = _repositoryUrl.match(/\/repos\/(\w+)/i);
+    var repo = _repositoryUrl.match(/\/repos\/([a-z0-9_\-]+)/i);
     if (repo !== null) {
         return {
             path: repo[0],
@@ -22,7 +22,7 @@ function getRepositoryData(_repositoryUrl) {
 
 function parseRepositoryUrl(_repositoryUrl) {
     var repositoryUrl = url.parse(_repositoryUrl);
-    var sshFormat = repositoryUrl.pathname.match(/^\/(\w+)\/(\w+)\.git$/i);
+    var sshFormat = repositoryUrl.pathname.match(/^\/([a-z0-9_\-]+)\/([a-z0-9_\-]+)\.git$/i);
 
     if (sshFormat === null) {
         repositoryUrl.project = getProjectData(repositoryUrl.pathname);
