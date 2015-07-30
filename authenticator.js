@@ -28,10 +28,11 @@ Authenticator.prototype.authenticate = function (_credentials, _cb) {
                 return _cb(new Error('Invalid StashUser email'));
             }
 
+            self.logger.debug('Authorization success', _stashData);
             _cb(null, _stashData);
         }).catch(_cb);
     } catch (_error) {
-        self.logger.error('Authorization failure', _error)
+        self.logger.error('Authorization failure', _error);
         _cb(_error);
     }
 };

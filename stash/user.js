@@ -190,8 +190,8 @@ User.prototype.permissions = function(_repository) {
 };
 
 var stashPermissions = {
-    read: ['REPO_READ', 'REPO_WRITE', 'REPO_ADMIN'],
-    write: ['REPO_WRITE', 'REPO_ADMIN']
+    read: ['REPO_READ', 'REPO_WRITE', 'REPO_ADMIN', 'PROJECT_READ', 'PROJECT_WRITE', 'PROJECT_ADMIN'],
+    write: ['REPO_WRITE', 'REPO_ADMIN', 'PROJECT_WRITE', 'PROJECT_ADMIN']
 }
 
 function getPermissionsMap(_permissionType) {
